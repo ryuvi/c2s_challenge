@@ -5,13 +5,20 @@ from dotenv import load_dotenv
 import os
 
 load_dotenv()
-DATABASE_URL = f'postgresql://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}@{os.getenv("DB_HOST")}:{os.getenv("DB_PORT")}/{os.getenv("DB_NAME")}'
+if os.getenv('DB_TYPE', 'sqlite') == 'sqlite':
+    DATABASE_URL = f'sqlite:///{os.getenv("DB_NAME")}.sqlite'
+    db_id_column = Column(String(36), primary_key=True, index=True, default=lambda: str(uuid4()))
+else:
+    DATABASE_URL = f'postgresql://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}@{os.getenv("DB_HOST")}:{os.getenv("DB_PORT")}/{os.getenv("DB_NAME")}'
+    db_id_column = Column(UUID, primary_key=True, index=True, default=uuid4)
+
 Base = declarative_base()
+
 
 class Car(Base):
     __tablename__ = "cars"
 
-    id = Column(UUID, primary_key=True, index=True, default=uuid4)
+    id = db_id_column
     marca = Column(String, nullable=False)
     modelo = Column(String, nullable=False)
     ano = Column(Integer, nullable=False)

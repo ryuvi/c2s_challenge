@@ -70,6 +70,8 @@ class ChatApp(App):
 
     def __init__(self):
         super().__init__()
+        self._shutdown_lock = asyncio.Lock()
+        self.zmq_context = None
         self.ctx = zmq.asyncio.Context()
         self.client_socket = None
         self.poller = zmq.asyncio.Poller()
@@ -109,7 +111,7 @@ class ChatApp(App):
             self.client_socket.connect("tcp://127.0.0.1:5555")
             self.poller.register(self.client_socket, zmq.POLLIN)
             self.display_message("✅ Conectado ao servidor de busca de veículos", "assistant")
-            self.display_message(f"🔹 Olá {TAKE_NAME()}, como posso te ajudar hoje?", 'assistant')
+            self.display_message(f"\n🔹 Olá {TAKE_NAME()}, como posso te ajudar hoje?", 'assistant')
         except Exception as e:
             self.display_message(f"❌ Erro na conexão: {e}", "error")
 
@@ -125,10 +127,10 @@ class ChatApp(App):
                     
                     # Adiciona sugestões se existirem
                     if 'suggestions' in response:
-                        suggestions = "\n💡 " + "\n💡 ".join(response['suggestions'])
+                        suggestions = "\nSugestões:\n💡 " + "\n💡 ".join(response['suggestions'])
                         message += suggestions
                     
-                    self.display_message(f"🔹 Assistente: {message}", "assistant")
+                    self.display_message(f"\n🔹 Assistente: {message}", "assistant")
                     
                     # Se houver resultados, mostra na tabela
                     if 'results' in response:
@@ -165,7 +167,7 @@ class ChatApp(App):
 
     async def send_message(self, message):
         if message and self.client_socket:
-            self.display_message(f"Você: {message}", "user")
+            self.display_message(f"🔸 Você: {message}", "user")
             try:
                 await self.client_socket.send_json({"message": message})
             except Exception as e:

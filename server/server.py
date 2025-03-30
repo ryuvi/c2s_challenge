@@ -10,7 +10,7 @@ class Server:
     def __init__(self):
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
-        self.socket.bind("tcp://127.0.0.1:5555")
+        self.socket.bind("tcp://0.0.0.0:5555")
         self.shutdown = False
         
         DatabaseManager.initialize_database()
@@ -22,9 +22,6 @@ class Server:
 
     def handle_shutdown(self, signum, frame):
         self.shutdown = True
-        self.socket.close()
-        self.context.term()
-        sys.exit(0)
 
     def run(self):
         print("Servidor iniciado. Aguardando conexões...")
@@ -34,18 +31,30 @@ class Server:
             while not self.shutdown:
                 try:
                     request = self.socket.recv_json(flags=zmq.NOBLOCK)
-                    response = self.conversation.process_message(request.get('message', ''))
                     
-                    if response.get('reset'):
-                        self.conversation._reset_conversation()
-                        
-                    self.socket.send_json(response)
+                    if request.get('action', '') == 'reset':
+                        self.conversation.do_reset()
+                        continue
+                    else:
+                        response = self.conversation.process_message(request.get('message', ''))
+                        self.socket.send_json(response)
                     
                 except zmq.Again:
+                    if self.shutdown:
+                        break
                     continue
                     
         except Exception as e:
             print(f'Erro no servidor: {e}')
         finally:
-            self.socket.close()
-            self.context.term()
+            try:
+                if hasattr(self, 'socket') and self.socket:
+                    self.socket.close()
+            except:
+                pass
+
+            try:
+                if hasattr(self, 'context') and self.context:
+                    self.context.term()
+            except:
+                pass
