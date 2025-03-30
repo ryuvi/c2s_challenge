@@ -122,17 +122,14 @@ class ChatApp(App):
                 if self.client_socket in dict(events):
                     response = await self.client_socket.recv_json()
                     
-                    # Processa a mensagem principal
                     message = response['message']
                     
-                    # Adiciona sugestões se existirem
                     if 'suggestions' in response:
                         suggestions = "\nSugestões:\n💡 " + "\n💡 ".join(response['suggestions'])
                         message += suggestions
                     
                     self.display_message(f"\n🔹 Assistente: {message}", "assistant")
                     
-                    # Se houver resultados, mostra na tabela
                     if 'results' in response:
                         await self.display_results(response['results'])
                         self.results_table.display = True

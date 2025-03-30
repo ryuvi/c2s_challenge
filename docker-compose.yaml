@@ -35,7 +35,7 @@ services:
       postgres:
         condition: service_healthy
     ports:
-      - "5555:5555"  # Expose ZMQ se necessário
+      - "5555:5555"
     networks:
       - app_network
 
